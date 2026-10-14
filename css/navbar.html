@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+    <style>
+        body {
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        #navbar {
+            background-color: beige;
+            padding: 0 0.5rem;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 300px) {
+            #navbar {
+                flex-direction: column;
+            }
+
+            #navbar__logo {
+                align-self: start;
+                padding-top: 0.2rem;
+            }
+        }
+
+        #navbar__logo {
+            font-size: 1.2rem;
+        }
+
+        #navbar__menu {
+            display: flex;
+            list-style: none;
+            padding: 0;
+        }
+
+        #navbar__menu li {
+            padding: 0.4rem 0.6rem;
+        }
+
+        #navbar__menu li:hover {
+            background-color: white;
+            border-radius: 0.4rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav id="navbar">
+        <!-- 브랜드 로고 -->
+        <div id="navbar__logo">
+            <i class="fa-brands fa-dev"></i>
+            <a href="#">qu3vipon</a>
+        </div>
+
+        <!-- 메뉴 -->
+        <ul id="navbar__menu">
+            <li><a href="">내 소개</a></li>
+            <li><a href="./resume.html">이력서</a></li>
+            <li><a href="">사진첩</a></li>
+        </ul>
+
+    </nav>
+</body>
+
+</html>

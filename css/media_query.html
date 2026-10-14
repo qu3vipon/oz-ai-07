@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            display: flex;
+        }
+
+        .box {
+            background-color: skyblue;
+            border: 1px solid black;
+            flex: 1;
+        }
+
+        /* media query: 특정 조건에서 동작하는 CSS */
+        /* 화면 너비가 300px 이하일 때 */
+        @media (max-width: 300px) {
+            .container {
+                flex-direction: column;
+            }
+            .box {
+                background-color: orange;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="box">홈</div>
+        <div class="box">공지사항</div>
+        <div class="box">게시판</div>
+        <div class="box">갤러리</div>
+        <div class="box">내 정보</div>
+    </div>
+</body>
+</html>
