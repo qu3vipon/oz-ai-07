@@ -1,16 +1,28 @@
-from fastapi import FastAPI, Path, Query, Body, HTTPException
+from fastapi import FastAPI, Path, Query, Body, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from connection import SessionFactory
+from connection import SessionFactory, get_session
 from model import Item
 
+import anyio
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(_):
+    # 서버 시작 직후에 실행할 코드
+    # 예: AI 모델 로드
+    limiter = anyio.to_thread.current_default_thread_limiter()
+    limiter.total_tokens == 200   # 쓰레드 풀 개수를 200개로 상향
+
+    yield
+    # 서버 종료 직전에 실행할 코드
 
 app = FastAPI(
-    title="e-Commerce 상품 관리 서버"
+    title="e-Commerce 상품 관리 서버",
+    lifespan=lifespan
 )
-
-ITEMS: list[dict[str, int | str]] = []
 
 class ItemResponse(BaseModel):
     id: int
@@ -22,9 +34,9 @@ class ItemResponse(BaseModel):
     summary="전체 상품 조회 API",
     response_model=list[ItemResponse]
 )
-def get_items_handler():
-    session = SessionFactory()
-
+def get_items_handler(
+    session = Depends(get_session)
+):
     stmt = select(Item)
     result = session.execute(stmt)
     items: list[Item] = result.scalars().all()
@@ -36,10 +48,9 @@ def get_items_handler():
     response_model=list[ItemResponse]
 )
 def search_items_handler(
-    q: str = Query(..., min_length=2)
+    q: str = Query(..., min_length=2),
+    session = Depends(get_session)
 ):
-    session = SessionFactory()
-
     stmt = select(Item).where(Item.name.contains(q))
     result = session.execute(stmt)
     items = result.scalars().all()
@@ -56,10 +67,9 @@ def search_items_handler(
     response_model=ItemResponse,
 )
 def get_item_detail_handler(
-    item_id: int = Path(..., ge=1)
+    item_id: int = Path(..., ge=1),
+    session = Depends(get_session)
 ):  
-    session = SessionFactory()
-
     stmt = select(Item).where(Item.id == item_id)
     result = session.execute(stmt)
     item = result.scalar()
@@ -79,9 +89,10 @@ class CreateItemRequest(BaseModel):
     response_model=ItemResponse,
     status_code=201
 )
-def create_new_item_handler(body: CreateItemRequest): 
-    session = SessionFactory()
-    
+def create_new_item_handler(
+    body: CreateItemRequest,
+    session = Depends(get_session)
+): 
     new_item = Item(name=body.name, price=body.price)
     session.add(new_item)
     session.commit()  # DB 저장
@@ -100,9 +111,8 @@ class UpdateItemRequest(BaseModel):
 def update_item_handler(
     item_id: int = Path(..., ge=1),
     body: UpdateItemRequest = Body(...),
+    session = Depends(get_session)
 ):
-    session = SessionFactory()
-
     # 조회
     stmt = select(Item).where(Item.id == item_id)
     result = session.execute(stmt)
@@ -130,9 +140,8 @@ def update_item_handler(
 )
 def delete_item_handler(
     item_id: int = Path(..., ge=1),
+    session = Depends(get_session)
 ):
-    session = SessionFactory()
-
     stmt = select(Item).where(Item.id == item_id)
     result = session.execute(stmt)
     item = result.scalar()

@@ -15,3 +15,12 @@ SessionFactory = sessionmaker(
     autocommit=False,
     expire_on_commit=False,
 )
+
+# 요청에서 사용하는 DB 세션을 관리하는 함수
+def get_session():
+    session = SessionFactory()
+
+    try:
+        yield session
+    finally:
+        session.close()
