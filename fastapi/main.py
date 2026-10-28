@@ -2,7 +2,8 @@ from fastapi import FastAPI, Path, Query, Body, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from connection import SessionFactory, get_session
+from connection import get_session
+from connection_async import get_async_session
 from model import Item
 
 import anyio
@@ -34,11 +35,11 @@ class ItemResponse(BaseModel):
     summary="전체 상품 조회 API",
     response_model=list[ItemResponse]
 )
-def get_items_handler(
-    session = Depends(get_session)
+async def get_items_handler(
+    session = Depends(get_async_session)
 ):
     stmt = select(Item)
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     items: list[Item] = result.scalars().all()
     return items
 
@@ -47,12 +48,12 @@ def get_items_handler(
     summary="상품 검색 API",
     response_model=list[ItemResponse]
 )
-def search_items_handler(
+async def search_items_handler(
     q: str = Query(..., min_length=2),
-    session = Depends(get_session)
+    session = Depends(get_async_session)
 ):
     stmt = select(Item).where(Item.name.contains(q))
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     items = result.scalars().all()
     if not items:
         raise HTTPException(
@@ -66,12 +67,12 @@ def search_items_handler(
     summary="단일 상품 조회 API (상세보기)",
     response_model=ItemResponse,
 )
-def get_item_detail_handler(
+async def get_item_detail_handler(
     item_id: int = Path(..., ge=1),
-    session = Depends(get_session)
+    session = Depends(get_async_session)
 ):  
     stmt = select(Item).where(Item.id == item_id)
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     item = result.scalar()
     if not item:
         raise HTTPException(
@@ -89,13 +90,13 @@ class CreateItemRequest(BaseModel):
     response_model=ItemResponse,
     status_code=201
 )
-def create_new_item_handler(
+async def create_new_item_handler(
     body: CreateItemRequest,
-    session = Depends(get_session)
+    session = Depends(get_async_session)
 ): 
     new_item = Item(name=body.name, price=body.price)
     session.add(new_item)
-    session.commit()  # DB 저장
+    await session.commit()  # DB 저장
     return new_item
 
 
@@ -108,14 +109,14 @@ class UpdateItemRequest(BaseModel):
     summary="상품 수정 API",
     response_model=ItemResponse,
 )
-def update_item_handler(
+async def update_item_handler(
     item_id: int = Path(..., ge=1),
     body: UpdateItemRequest = Body(...),
-    session = Depends(get_session)
+    session = Depends(get_async_session)
 ):
     # 조회
     stmt = select(Item).where(Item.id == item_id)
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     item = result.scalar()
     if not item:
         raise HTTPException(
@@ -129,7 +130,7 @@ def update_item_handler(
     if body.price:
         item.price = body.price
 
-    session.commit()
+    await session.commit()
     return item
 
 @app.delete(
@@ -138,12 +139,12 @@ def update_item_handler(
     response_model=None,
     status_code=204
 )
-def delete_item_handler(
+async def delete_item_handler(
     item_id: int = Path(..., ge=1),
-    session = Depends(get_session)
+    session = Depends(get_async_session)
 ):
     stmt = select(Item).where(Item.id == item_id)
-    result = session.execute(stmt)
+    result = await session.execute(stmt)
     item = result.scalar()
     if not item:
         raise HTTPException(
@@ -151,5 +152,5 @@ def delete_item_handler(
             detail="상품을 찾을 수 없습니다."
         )
 
-    session.delete(item)
-    session.commit()
+    await session.delete(item)
+    await session.commit()
