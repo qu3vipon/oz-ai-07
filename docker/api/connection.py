@@ -1,0 +1,14 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+DATABASE_URL = "mysql+pymysql://root:password@db:3306/fastapi"
+
+engine = create_engine(DATABASE_URL, echo=True)
+
+SessionFactory = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+)

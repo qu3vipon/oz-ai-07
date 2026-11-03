@@ -1,11 +1,29 @@
 # Docker Compose: 여러개의 컨테이너를 관리하는 기술
 services:
   api:
-    build: .
+    build: ./api
     ports:
       - 9000:8000
+    volumes:
+      - ./api:/app
+    depends_on:
+      - db
+      - redis
   db:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: fastapi
+    volumes:
+      - local_db:/var/lib/mysql
+  redis:
+    image: redis:8
+  llm:
+    build: ./llm
+    volumes:
+      - ./llm/models:/app/models
+    depends_on:
+      - redis
+
+volumes:
+  local_db:
