@@ -3,12 +3,12 @@ from sqlalchemy import select
 
 from database.connection import get_session
 from user.auth import hash_password, verify_password, create_access_token, verify_user
-from user.model import User
+from user.model import User, UserHealthProfile
 from user.request import SignUpRequest, LogInRequest, CreateHealthProfileRequest
-from user.response import SignUpResponse, LogInResponse
+from user.response import SignUpResponse, LogInResponse, UserHealthProfileResponse
 
 
-router = APIRouter()
+router = APIRouter(tags=["User"])
 
 @router.post(
     "/users",
@@ -78,10 +78,29 @@ async def login_handler(
     "/health-profiles",
     summary="건강 프로필 생성 API",
     status_code=201,
+    response_model=UserHealthProfileResponse,
 )
 async def create_user_health_profile_handler(
     body: CreateHealthProfileRequest,
     session = Depends(get_session),
     user_id = Depends(verify_user),  # 헤더에 JWT 토큰 요구하도록 명시
 ):
-    return {"user_id": user_id}
+    # [1] 프로필 중복 검사
+    stmt = (
+        select(UserHealthProfile)
+        .where(UserHealthProfile.user_id == user_id)
+    )
+    result = await session.execute(stmt)
+    profile = result.scalar()
+    if profile:
+        raise HTTPException(
+            status_code=409, detail="이미 건강 프로필이 존재합니다."
+        )
+
+    # [2]
+    profile_data = body.model_dump()
+    new_profile = UserHealthProfile(user_id=user_id, **profile_data)
+    session.add(new_profile)
+    await session.commit()
+
+    return new_profile
